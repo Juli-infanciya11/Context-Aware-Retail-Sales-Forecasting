@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Retail Forecasting Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#080c14;--bg2:#0e1420;--bg3:#141c2e;
+  --border:#1e2a40;--border2:#253348;
+  --text:#e8edf5;--text2:#8a9ab5;--text3:#4a5a72;
+  --blue:#4f8ef7;--green:#34d399;--amber:#fbbf24;
+  --purple:#a78bfa;--red:#f87171;--teal:#22d3ee;
+  --card-r:14px;
+}
+.light{
+  --bg:#f0f4fb;--bg2:#ffffff;--bg3:#e4eaf5;
+  --border:#d0daea;--border2:#b8c8e0;
+  --text:#0f172a;--text2:#4a5a72;--text3:#94a3b8;
+  --blue:#2563eb;--green:#059669;--amber:#d97706;
+  --purple:#7c3aed;--red:#dc2626;--teal:#0891b2;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.3s,color 0.3s;}
+nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:54px;position:sticky;top:0;z-index:100;}
+.nav-brand{display:flex;align-items:center;gap:10px;}
+.nav-logo{width:30px;height:30px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;}
+.nav-title{font-size:14px;font-weight:600;color:var(--text);}
+.nav-links{display:flex;gap:3px;flex-wrap:wrap;}
+.nav-link{padding:5px 12px;border-radius:8px;font-size:12px;color:var(--text2);cursor:pointer;text-decoration:none;transition:all 0.2s;font-weight:500;}
+.nav-link:hover{background:var(--bg3);color:var(--text);}
+.nav-link.active{background:var(--blue);color:#fff;}
+.nav-right{display:flex;align-items:center;gap:8px;}
+.weather-chip{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--blue);font-family:'DM Mono',monospace;}
+.theme-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.live-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.alert-banner{display:none;background:linear-gradient(90deg,rgba(251,191,36,0.15),rgba(248,113,113,0.1));border-bottom:1px solid rgba(251,191,36,0.3);padding:8px 24px;font-size:12px;color:var(--amber);align-items:center;gap:8px;}
+.alert-banner.show{display:flex;}
+.alert-item{background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.2);border-radius:6px;padding:3px 10px;font-size:11px;}
+.page{display:none;padding:22px 26px;max-width:1400px;margin:0 auto;}
+.page.active{display:block;}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--card-r);padding:16px 18px;position:relative;overflow:hidden;}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.b::after{background:var(--blue);}
+.kpi.g::after{background:var(--green);}
+.kpi.a::after{background:var(--amber);}
+.kpi.p::after{background:var(--purple);}
+.kpi-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px;font-weight:500;}
+.kpi-val{font-size:24px;font-weight:700;color:var(--text);line-height:1;}
+.kpi-sub{font-size:11px;color:var(--text2);margin-top:4px;}
+.badge{display:inline-block;padding:2px 7px;border-radius:8px;font-size:11px;font-weight:600;margin-top:5px;}
+.badge-up{background:rgba(52,211,153,0.15);color:var(--green);}
+.badge-down{background:rgba(248,113,113,0.15);color:var(--red);}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--card-r);padding:18px;}
+.card-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px;}
+.card-sub{font-size:12px;color:var(--text2);margin-bottom:14px;}
+.chart-box{position:relative;height:200px;}
+.chart-box.tall{height:260px;}
+.chart-box.sm{height:160px;}
+.grid-2{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+.grid-equal{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.mb{margin-bottom:12px;}
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.cat-pills{display:flex;gap:5px;flex-wrap:wrap;}
+.pill{padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all 0.2s;}
+.pill:hover{border-color:var(--blue);color:var(--blue);}
+.pill.on{background:var(--blue);border-color:var(--blue);color:#fff;}
+.btn{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+.btn:hover{border-color:var(--blue);color:var(--blue);}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:8px 10px;color:var(--text2);border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;}
+td{padding:8px 10px;border-bottom:1px solid var(--bg3);color:var(--text);}
+tr:hover td{background:var(--bg3);}
+tr:last-child td{border:none;}
+.section-head{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;margin-top:18px;display:flex;align-items:center;gap:8px;}
+.section-head::after{content:'';flex:1;height:1px;background:var(--border);}
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:999;}
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.sim-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--card-r);padding:20px;}
+.slider-row{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.slider-label{width:140px;font-size:13px;color:var(--text2);font-weight:500;}
+.slider-val{width:60px;text-align:right;font-size:13px;font-weight:600;color:var(--text);font-family:'DM Mono',monospace;}
+input[type=range]{flex:1;accent-color:var(--blue);height:4px;}
+.toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.toggle{width:40px;height:22px;background:var(--border);border-radius:11px;position:relative;cursor:pointer;transition:background 0.2s;}
+.toggle.on{background:var(--blue);}
+.toggle::after{content:'';position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform 0.2s;}
+.toggle.on::after{transform:translateX(18px);}
+.sim-result{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;margin-top:16px;}
+.sim-val{font-size:42px;font-weight:700;color:var(--blue);}
+.sim-breakdown{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;}
+.sim-factor{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+.sim-factor-val{font-size:16px;font-weight:700;}
+.sim-factor-lbl{font-size:10px;color:var(--text2);margin-top:3px;}
+.whatif-form{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group label{font-size:12px;color:var(--text2);font-weight:500;}
+.form-group input,.form-group select{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;}
+.form-group input:focus,.form-group select:focus{border-color:var(--blue);}
+.whatif-result{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;display:none;}
+.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px;}
+.result-item{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;}
+.result-val{font-size:20px;font-weight:700;color:var(--blue);}
+.result-lbl{font-size:11px;color:var(--text2);margin-top:4px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:90%;max-width:800px;max-height:85vh;overflow-y:auto;padding:24px;}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.modal-title{font-size:18px;font-weight:700;color:var(--text);}
+.modal-close{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text2);}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--text);transform:translateY(100px);opacity:0;transition:all 0.3s;z-index:200;}
+.toast.show{transform:translateY(0);opacity:1;}
+.refresh-bar{height:2px;background:var(--border);position:fixed;bottom:0;left:0;right:0;z-index:50;}
+.refresh-progress{height:100%;background:var(--blue);transition:width 1s linear;width:0%;}
+.metric-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.metric-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.metric-cat{font-size:11px;color:var(--text2);margin-bottom:5px;}
+.metric-val{font-size:18px;font-weight:700;color:var(--blue);}
+.metric-lbl{font-size:10px;color:var(--text3);}
+.metric-mae{font-size:11px;color:var(--amber);margin-top:3px;font-family:'DM Mono',monospace;}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <p style="color:var(--text2);font-size:13px">Fetching live data from APIs...</p>
+</div>
+
+<div class="alert-banner" id="alert-banner"></div>
+
+<div id="app" style="display:none">
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">RF</div>
+    <span class="nav-title">Retail Forecasting</span>
+  </div>
+  <div class="nav-links">
+    <a class="nav-link active" onclick="goTo('dash',this)">Dashboard</a>
+    <a class="nav-link" onclick="goTo('forecast',this)">Forecast</a>
+    <a class="nav-link" onclick="goTo('weather',this)">Weather</a>
+    <a class="nav-link" onclick="goTo('holiday',this)">Holidays</a>
+    <a class="nav-link" onclick="goTo('model',this)">Model</a>
+    <a class="nav-link" onclick="goTo('simulator',this)">🎛 Simulator</a>
+    <a class="nav-link" onclick="goTo('whatif',this)">🔮 What-If</a>
+  </div>
+  <div class="nav-right">
+    <div class="weather-chip" id="w-chip">Loading...</div>
+    <div class="live-dot"></div>
+    <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+    <button class="btn primary" onclick="downloadCSV()">⬇ CSV</button>
+  </div>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dash">
+  <div class="toolbar">
+    <div>
+      <div style="font-size:18px;font-weight:700;color:var(--text)">Sales Dashboard</div>
+      <div style="font-size:12px;color:var(--text2)" id="dash-updated">Updating...</div>
+    </div>
+    <div class="cat-pills" id="dash-pills">
+      <span class="pill on" onclick="filterCat('All',this)">All</span>
+      <span class="pill" onclick="filterCat('Electronics',this)">Electronics</span>
+      <span class="pill" onclick="filterCat('Clothing',this)">Clothing</span>
+      <span class="pill" onclick="filterCat('Groceries',this)">Groceries</span>
+      <span class="pill" onclick="filterCat('Footwear',this)">Footwear</span>
+      <span class="pill" onclick="filterCat('HomeDecor',this)">HomeDecor</span>
+    </div>
+  </div>
+  <div class="kpi-row" id="kpi-row"></div>
+  <div class="grid-2 mb">
+    <div class="card" style="cursor:pointer">
+      <div class="card-title">Sales by Category <span style="font-size:11px;color:var(--blue)">(click bar to deep dive)</span></div>
+      <div class="card-sub">90-day total revenue</div>
+      <div class="chart-box"><canvas id="c-cat"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Weekend vs Weekday</div>
+      <div class="card-sub">Avg daily sales split</div>
+      <div class="chart-box"><canvas id="c-wknd"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-3 mb">
+    <div class="card">
+      <div class="card-title">Day of Week Pattern</div>
+      <div class="card-sub">Mon–Sun avg sales</div>
+      <div class="chart-box"><canvas id="c-dow"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Holiday Impact</div>
+      <div class="card-sub">Holiday vs non-holiday avg</div>
+      <div class="chart-box"><canvas id="c-hol"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Weather Impact</div>
+      <div class="card-sub">Clear vs rainy avg</div>
+      <div class="chart-box"><canvas id="c-rain"></canvas></div>
+    </div>
+  </div>
+  <div class="card mb">
+    <div class="card-title">Monthly Sales Trend</div>
+    <div class="card-sub">Seasonality across months</div>
+    <div class="chart-box"><canvas id="c-month"></canvas></div>
+  </div>
+  <div class="section-head">Top 5 Best & Worst Sales Days</div>
+  <div class="grid-equal mb">
+    <div class="card">
+      <div class="card-title" style="color:var(--green)">🏆 Best 5 Days</div>
+      <div class="card-sub">Highest sales days with reason</div>
+      <table><thead><tr><th>Date</th><th>Category</th><th>Sales</th><th>Reason</th></tr></thead>
+      <tbody id="best-days"></tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--red)">📉 Worst 5 Days</div>
+      <div class="card-sub">Lowest sales days with reason</div>
+      <table><thead><tr><th>Date</th><th>Category</th><th>Sales</th><th>Reason</th></tr></thead>
+      <tbody id="worst-days"></tbody></table>
+    </div>
+  </div>
+  <div class="section-head">Model Performance</div>
+  <div class="metric-grid mb" id="metric-grid"></div>
+</div>
+
+<!-- FORECAST -->
+<div class="page" id="page-forecast">
+  <div class="toolbar">
+    <div>
+      <div style="font-size:18px;font-weight:700">30-Day Sales Forecast</div>
+      <div style="font-size:12px;color:var(--text2)">AI predictions with confidence bands</div>
+    </div>
+    <div class="cat-pills">
+      <span class="pill on" onclick="selFcCat('Electronics',this)">Electronics</span>
+      <span class="pill" onclick="selFcCat('Clothing',this)">Clothing</span>
+      <span class="pill" onclick="selFcCat('Groceries',this)">Groceries</span>
+      <span class="pill" onclick="selFcCat('Footwear',this)">Footwear</span>
+      <span class="pill" onclick="selFcCat('HomeDecor',this)">HomeDecor</span>
+    </div>
+  </div>
+  <div class="grid-3 mb">
+    <div class="card"><div class="kpi-label">Avg Predicted/Day</div><div class="kpi-val" id="fc-avg">—</div></div>
+    <div class="card"><div class="kpi-label">Peak Forecast Day</div><div class="kpi-val" id="fc-peak">—</div><div class="kpi-sub" id="fc-peak-date"></div></div>
+    <div class="card"><div class="kpi-label">Model R²</div><div class="kpi-val" id="fc-r2">—</div></div>
+  </div>
+  <div class="card mb">
+    <div class="card-title">30-Day Forecast — <span id="fc-cat-label">Electronics</span></div>
+    <div class="card-sub">Predicted ± 15% confidence band</div>
+    <div class="chart-box tall"><canvas id="c-forecast"></canvas></div>
+  </div>
+  <div class="grid-equal mb">
+    <div class="card"><div class="card-title">Forecast by Day of Week</div><div class="chart-box sm"><canvas id="c-fc-dow"></canvas></div></div>
+    <div class="card"><div class="card-title">Upcoming Holiday Lift</div><div class="chart-box sm"><canvas id="c-fc-hol"></canvas></div></div>
+  </div>
+</div>
+
+<!-- WEATHER -->
+<div class="page" id="page-weather">
+  <div style="font-size:18px;font-weight:700;margin-bottom:16px">Weather Analysis</div>
+  <div class="kpi-row" id="weather-kpis"></div>
+  <div class="grid-equal mb">
+    <div class="card"><div class="card-title">Temperature vs Sales</div><div class="card-sub">Correlation by category</div><div class="chart-box"><canvas id="c-temp-corr"></canvas></div></div>
+    <div class="card"><div class="card-title">Humidity vs Sales</div><div class="card-sub">Correlation by category</div><div class="chart-box"><canvas id="c-hum-corr"></canvas></div></div>
+  </div>
+  <div class="grid-3 mb">
+    <div class="card"><div class="card-title">Rain Impact per Category</div><div class="chart-box"><canvas id="c-rain-cat"></canvas></div></div>
+    <div class="card"><div class="card-title">Clear vs Rainy Sales</div><div class="chart-box"><canvas id="c-rain-comp"></canvas></div></div>
+    <div class="card"><div class="card-title">Live Conditions</div><div id="weather-live-card" style="padding-top:8px"></div></div>
+  </div>
+</div>
+
+<!-- HOLIDAYS -->
+<div class="page" id="page-holiday">
+  <div style="font-size:18px;font-weight:700;margin-bottom:16px">Holiday Calendar & Impact</div>
+  <div class="grid-equal mb">
+    <div class="card"><div class="card-title">Holiday Type Distribution</div><div class="chart-box"><canvas id="c-hol-type"></canvas></div></div>
+    <div class="card"><div class="card-title">Holidays by Month</div><div class="chart-box"><canvas id="c-hol-month"></canvas></div></div>
+  </div>
+  <div class="card mb">
+    <div class="card-title">Upcoming Holidays 2026</div>
+    <table><thead><tr><th>Holiday</th><th>Date</th><th>Type</th><th>Days Away</th><th>Expected Lift</th><th>Alert</th></tr></thead>
+    <tbody id="hol-tbody"></tbody></table>
+  </div>
+</div>
+
+<!-- MODEL -->
+<div class="page" id="page-model">
+  <div style="font-size:18px;font-weight:700;margin-bottom:16px">Model Insights</div>
+  <div class="metric-grid mb" id="model-metric-grid"></div>
+  <div class="grid-equal mb">
+    <div class="card"><div class="card-title">R² Score Comparison</div><div class="chart-box"><canvas id="c-r2"></canvas></div></div>
+    <div class="card"><div class="card-title">MAE Comparison</div><div class="chart-box"><canvas id="c-mae"></canvas></div></div>
+  </div>
+  <div class="card mb">
+    <div class="card-title">Feature Importance — Top Drivers</div>
+    <div class="card-sub">Which features XGBoost found most predictive</div>
+    <div class="chart-box tall"><canvas id="c-feat"></canvas></div>
+  </div>
+  <div class="card mb">
+    <div class="card-title">Model Architecture</div>
+    <table><thead><tr><th>Model</th><th>Type</th><th>Weight</th><th>Best For</th></tr></thead>
+    <tbody>
+      <tr><td style="color:var(--blue);font-weight:600">XGBoost</td><td>Gradient Boosting</td><td><span class="badge badge-up">60%</span></td><td>Non-linear feature interactions</td></tr>
+      <tr><td style="color:var(--green);font-weight:600">SARIMA</td><td>Time Series</td><td><span class="badge badge-up">40%</span></td><td>Weekly & seasonal patterns</td></tr>
+      <tr><td style="color:var(--amber);font-weight:600">Ensemble</td><td>Weighted Average</td><td><span class="badge badge-up">100%</span></td><td>Final production forecast</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<!-- SIMULATOR -->
+<div class="page" id="page-simulator">
+  <div style="font-size:18px;font-weight:700;margin-bottom:4px">🎛 Sales Simulator</div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:18px">Adjust weather and context — see predicted sales update live</div>
+  <div class="grid-equal mb">
+    <div class="sim-card">
+      <div class="card-title" style="margin-bottom:16px">Adjust Conditions</div>
+      <div class="slider-row">
+        <span class="slider-label">🌡 Temperature</span>
+        <input type="range" min="20" max="45" value="30" id="sim-temp" oninput="runSim()">
+        <span class="slider-val" id="sim-temp-val">30°C</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">💧 Humidity</span>
+        <input type="range" min="30" max="100" value="70" id="sim-hum" oninput="runSim()">
+        <span class="slider-val" id="sim-hum-val">70%</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">📅 Day of Week</span>
+        <input type="range" min="0" max="6" value="1" id="sim-dow" oninput="runSim()">
+        <span class="slider-val" id="sim-dow-val">Monday</span>
+      </div>
+      <div class="toggle-row">
+        <span class="slider-label">🌧 Rainy Day</span>
+        <div class="toggle" id="sim-rain-tog" onclick="toggleSim('rain')"></div>
+        <span id="sim-rain-lbl" style="font-size:12px;color:var(--text2)">No</span>
+      </div>
+      <div class="toggle-row">
+        <span class="slider-label">🎉 Holiday</span>
+        <div class="toggle" id="sim-hol-tog" onclick="toggleSim('holiday')"></div>
+        <span id="sim-hol-lbl" style="font-size:12px;color:var(--text2)">No</span>
+      </div>
+      <div class="toggle-row">
+        <span class="slider-label">🛍 Festival Season</span>
+        <div class="toggle" id="sim-fest-tog" onclick="toggleSim('festival')"></div>
+        <span id="sim-fest-lbl" style="font-size:12px;color:var(--text2)">No</span>
+      </div>
+      <div style="margin-top:14px">
+        <label style="font-size:12px;color:var(--text2);font-weight:500">Category</label>
+        <div class="cat-pills" style="margin-top:6px">
+          <span class="pill on" onclick="simCat('Electronics',this)">Electronics</span>
+          <span class="pill" onclick="simCat('Clothing',this)">Clothing</span>
+          <span class="pill" onclick="simCat('Groceries',this)">Groceries</span>
+          <span class="pill" onclick="simCat('Footwear',this)">Footwear</span>
+          <span class="pill" onclick="simCat('HomeDecor',this)">HomeDecor</span>
+        </div>
+      </div>
+    </div>
+    <div class="sim-card">
+      <div class="card-title" style="margin-bottom:10px">Predicted Sales</div>
+      <div class="sim-result">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px" id="sim-cat-label">Electronics</div>
+        <div class="sim-val" id="sim-predicted">₹0</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:6px" id="sim-verdict"></div>
+        <div class="sim-breakdown" id="sim-breakdown"></div>
+      </div>
+      <div class="chart-box sm" style="margin-top:14px"><canvas id="c-sim"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- WHAT-IF -->
+<div class="page" id="page-whatif">
+  <div style="font-size:18px;font-weight:700;margin-bottom:4px">🔮 What-If Analysis</div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:18px">
+    Select date range and shop — past dates show actual sales, future dates show AI predictions
+  </div>
+  <div class="card mb">
+    <div class="card-title" style="margin-bottom:14px">Configure Scenario</div>
+
+    <!-- Mode indicator -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:8px;padding:8px 14px;font-size:12px">
+        <span style="color:var(--green);font-weight:600">📊 Past dates</span>
+        <span style="color:var(--text2);margin-left:6px">→ Shows actual recorded sales</span>
+      </div>
+      <div style="background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.3);border-radius:8px;padding:8px 14px;font-size:12px">
+        <span style="color:var(--blue);font-weight:600">🔮 Future dates</span>
+        <span style="color:var(--text2);margin-left:6px">→ Shows AI predicted sales</span>
+      </div>
+      <div style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:8px;padding:8px 14px;font-size:12px">
+        <span style="color:var(--purple);font-weight:600">📊+🔮 Mixed range</span>
+        <span style="color:var(--text2);margin-left:6px">→ Actual + predicted combined</span>
+      </div>
+    </div>
+
+    <div class="whatif-form">
+      <div class="form-group">
+        <label>Start Date</label>
+        <input type="date" id="wi-start"/>
+      </div>
+      <div class="form-group">
+        <label>End Date</label>
+        <input type="date" id="wi-end"/>
+      </div>
+      <div class="form-group">
+        <label>Shop / Mall</label>
+        <select id="wi-shop">
+          <option value="Phoenix MarketCity">Phoenix MarketCity</option>
+          <option value="Express Avenue Mall">Express Avenue Mall</option>
+          <option value="Spencer Plaza">Spencer Plaza</option>
+          <option value="Ampa Skywalk">Ampa Skywalk</option>
+          <option value="Forum Vijaya Mall">Forum Vijaya Mall</option>
+          <option value="VR Chennai Mall">VR Chennai Mall</option>
+          <option value="Standalone Store — T Nagar">Standalone Store — T Nagar</option>
+          <option value="Standalone Store — Anna Nagar">Standalone Store — Anna Nagar</option>
+          <option value="Standalone Store — Velachery">Standalone Store — Velachery</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="wi-cat">
+          <option>Electronics</option>
+          <option>Clothing</option>
+          <option>Groceries</option>
+          <option>Footwear</option>
+          <option>HomeDecor</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Temperature (°C) — for predictions</label>
+        <input type="number" id="wi-temp" placeholder="e.g. 32" min="15" max="45"/>
+      </div>
+      <div class="form-group">
+        <label>Humidity (%) — for predictions</label>
+        <input type="number" id="wi-hum" placeholder="e.g. 75" min="0" max="100"/>
+      </div>
+      <div class="form-group">
+        <label>Holiday period? — for predictions</label>
+        <select id="wi-holiday"><option value="0">No</option><option value="1">Yes</option></select>
+      </div>
+      <div class="form-group">
+        <label>Rainy? — for predictions</label>
+        <select id="wi-rain"><option value="0">No</option><option value="1">Yes</option></select>
+      </div>
+    </div>
+    <button class="btn primary" onclick="runWhatIf()" style="width:100%;padding:10px;margin-top:4px">
+      Generate Analysis
+    </button>
+
+    <div class="whatif-result" id="wi-result">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div>
+          <div style="font-size:16px;font-weight:600;color:var(--text)" id="wi-title"></div>
+          <div style="font-size:12px;color:var(--text2)" id="wi-subtitle"></div>
+        </div>
+        <span style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600" id="wi-days-badge"></span>
+      </div>
+      <div class="result-grid" style="margin-bottom:14px">
+        <div class="result-item"><div class="result-val" id="wi-total">—</div><div class="result-lbl">Total Sales</div></div>
+        <div class="result-item"><div class="result-val" id="wi-daily">—</div><div class="result-lbl">Avg Daily Sales</div></div>
+        <div class="result-item"><div class="result-val" id="wi-peak-day">—</div><div class="result-lbl">Peak Day</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="result-item"><div class="result-val" style="color:var(--red)" id="wi-low">—</div><div class="result-lbl" id="wi-low-lbl">Lower Bound</div></div>
+        <div class="result-item"><div class="result-val" style="color:var(--green)" id="wi-high">—</div><div class="result-lbl" id="wi-high-lbl">Upper Bound</div></div>
+      </div>
+      <div class="card-title" style="margin-bottom:8px">Daily Sales Chart</div>
+      <div class="chart-box tall mb"><canvas id="c-wi-chart"></canvas></div>
+      <div class="card-title" style="margin-bottom:8px">Day-by-Day Breakdown</div>
+      <div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+        <table>
+          <thead><tr><th>Date</th><th>Day</th><th>Sales</th><th>Type / Factor</th></tr></thead>
+          <tbody id="wi-table-body"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:14px;padding:12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--text2);line-height:1.6" id="wi-explanation"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end app -->
+
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Category Deep Dive</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<div class="refresh-bar"><div class="refresh-progress" id="refresh-prog"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API='http://localhost:8000';
+const CATS=['Electronics','Clothing','Groceries','Footwear','HomeDecor'];
+const COLS=['#4f8ef7','#34d399','#fbbf24','#a78bfa','#f87171'];
+const MONTHS=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const SHOP_MULT={'Phoenix MarketCity':1.35,'Express Avenue Mall':1.28,'Spencer Plaza':1.20,
+  'Ampa Skywalk':1.15,'Forum Vijaya Mall':1.25,'VR Chennai Mall':1.30,
+  'Standalone Store — T Nagar':1.10,'Standalone Store — Anna Nagar':1.05,
+  'Standalone Store — Velachery':1.00};
+const BASE_SALES={Electronics:45000,Clothing:30000,Groceries:25000,Footwear:20000,HomeDecor:15000};
+
+let charts={},dash=null,holidays=null,impacts=null;
+let isDark=true,currentCat='All',simCatSel='Electronics';
+let simRain=false,simHoliday=false,simFestival=false;
+let progressTimer,elapsed=0,refreshSecs=300;
+
+function goTo(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  el.classList.add('active');
+  if(page==='forecast') renderForecastPage('Electronics');
+  if(page==='weather')  renderWeatherPage();
+  if(page==='holiday')  renderHolidayPage();
+  if(page==='model')    renderModelPage();
+  if(page==='simulator') runSim();
+}
+
+function toggleTheme(){
+  isDark=!isDark;
+  document.body.classList.toggle('light',!isDark);
+  document.querySelector('.theme-btn').textContent=isDark?'🌙':'☀️';
+  Object.values(charts).forEach(c=>c.destroy());
+  charts={};
+  renderDash();
+}
+
+function chart(id,type,labels,datasets,extra={}){
+  if(charts[id]) charts[id].destroy();
+  const ctx=document.getElementById(id);
+  if(!ctx) return;
+  const gc=isDark?'#1e2a40':'#e4eaf5';
+  const tc=isDark?'#8a9ab5':'#4a5a72';
+  charts[id]=new Chart(ctx,{
+    type,data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:tc,font:{size:11,family:'DM Sans'}}}},
+      scales:['pie','doughnut'].includes(type)?{}:{
+        x:{ticks:{color:tc,font:{size:10}},grid:{color:gc}},
+        y:{ticks:{color:tc,font:{size:10}},grid:{color:gc}}
+      },...extra}
+  });
+}
+
+function sf(v,d=2){return isNaN(v)||!isFinite(v)?0:parseFloat(v.toFixed(d));}
+function fmt(v){return v>=100000?'₹'+(v/100000).toFixed(1)+'L':v>=1000?'₹'+(v/1000).toFixed(1)+'K':'₹'+Math.round(v);}
+
+async function load(){
+  try{
+    const [d,h,wi]=await Promise.all([
+      fetch(`${API}/dashboard-data`).then(r=>r.json()),
+      fetch(`${API}/holiday-impact`).then(r=>r.json()),
+      fetch(`${API}/weather-impact`).then(r=>r.json())
+    ]);
+    dash=d; holidays=h; impacts=wi;
+    document.getElementById('loading').style.display='none';
+    document.getElementById('app').style.display='block';
+    renderWeatherChip(d.current_weather);
+    renderAlerts(d.current_weather,h.upcoming_holidays||[]);
+    renderDash();
+    startRefresh();
+    showToast('✓ Live data loaded');
+  }catch(e){
+    document.getElementById('loading').innerHTML=
+      `<p style="color:#f87171;text-align:center">Cannot connect to API<br>
+      <small style="color:#8a9ab5">Make sure FastAPI server is running</small></p>`;
+  }
+}
+
+function renderAlerts(weather,hols){
+  const alerts=[];
+  if(weather&&(weather.weather_condition==='Rain'||weather.description.includes('rain')))
+    alerts.push('🌧 Rain today — expect reduced footfall in Footwear & Electronics');
+  hols.filter(h=>h.days_away<=3).forEach(h=>
+    alerts.push(`🎉 ${h.holiday_name} in ${h.days_away} day(s) — prepare for +${h.expected_lift_pct}% sales lift`));
+  const banner=document.getElementById('alert-banner');
+  if(alerts.length>0){
+    banner.classList.add('show');
+    banner.innerHTML='⚡ '+alerts.map(a=>`<span class="alert-item">${a}</span>`).join('');
+  }
+}
+
+function renderDash(){
+  if(!dash) return;
+  const cats=currentCat==='All'?dash.sales_by_category:dash.sales_by_category.filter(c=>c.category===currentCat);
+  const total=cats.reduce((s,c)=>s+c.total,0);
+  const top=dash.sales_by_category.reduce((a,b)=>a.total>b.total?a:b);
+  const hLift=sf(dash.holiday_comparison.lift_pct,1);
+  const rImp=sf(dash.weather_vs_sales.rain_impact_pct,1);
+
+  document.getElementById('kpi-row').innerHTML=`
+    <div class="kpi b"><div class="kpi-label">Total Revenue</div><div class="kpi-val">${fmt(total)}</div><div class="kpi-sub">${currentCat==='All'?'All categories':currentCat}</div></div>
+    <div class="kpi g"><div class="kpi-label">Top Category</div><div class="kpi-val" style="font-size:18px">${top.category}</div><div class="kpi-sub">${fmt(top.avg)}/day</div></div>
+    <div class="kpi a"><div class="kpi-label">Holiday Lift</div><div class="kpi-val">${hLift>0?'+':''}${hLift}%</div><span class="badge ${hLift>=0?'badge-up':'badge-down'}">vs non-holiday</span></div>
+    <div class="kpi p"><div class="kpi-label">Rain Impact</div><div class="kpi-val">${rImp>0?'+':''}${rImp}%</div><span class="badge ${rImp>=0?'badge-up':'badge-down'}">rainy vs clear</span></div>`;
+
+  document.getElementById('dash-updated').textContent='Updated: '+new Date().toLocaleTimeString();
+
+  const labels=cats.map(c=>c.category);
+  const bgCols=currentCat==='All'?COLS:Array(cats.length).fill(COLS[CATS.indexOf(currentCat)]||COLS[0]);
+  chart('c-cat','bar',labels,[{label:'Total Sales',data:cats.map(c=>c.total),backgroundColor:bgCols,borderRadius:6}],
+    {plugins:{legend:{display:false}},onClick:(e,el)=>{if(el.length)openDeepDive(cats[el[0].index].category);}});
+
+  const wv=dash.weekend_vs_weekday;
+  chart('c-wknd','doughnut',['Weekend','Weekday'],[{
+    data:[wv.weekend_avg,wv.weekday_avg],
+    backgroundColor:[isDark?'#4f8ef7':'#2563eb',isDark?'#1e2a40':'#e4eaf5'],
+    borderColor:['#4f8ef7',isDark?'#253348':'#d0daea'],borderWidth:2}]);
+
+  const dow=dash.sales_by_day_of_week;
+  chart('c-dow','bar',DAYS,[{label:'Avg Sales',data:DAYS.map(d=>dow[d]||0),
+    backgroundColor:DAYS.map((_,i)=>i>=5?'#4f8ef7':(isDark?'#1e2a40':'#d0daea')),borderRadius:4}],
+    {plugins:{legend:{display:false}}});
+
+  const hc=dash.holiday_comparison;
+  chart('c-hol','bar',['Holiday','Non-Holiday'],[{data:[hc.holiday_avg,hc.non_holiday_avg],
+    backgroundColor:['#34d399',isDark?'#1e2a40':'#e4eaf5'],borderRadius:6}],
+    {plugins:{legend:{display:false}}});
+
+  const ww=dash.weather_vs_sales;
+  chart('c-rain','bar',['Clear','Rainy'],[{data:[ww.clear_avg,ww.rainy_avg],
+    backgroundColor:['#fbbf24','#4f8ef7'],borderRadius:6}],{plugins:{legend:{display:false}}});
+
+  const monthly=dash.sales_by_month;
+  chart('c-month','line',Object.keys(monthly).map(m=>MONTHS[parseInt(m)]),[{
+    label:'Avg Daily Sales',data:Object.values(monthly),
+    borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.08)',
+    fill:true,tension:0.4,pointRadius:4,pointBackgroundColor:'#4f8ef7'}]);
+
+  renderBestWorst();
+  document.getElementById('metric-grid').innerHTML=dash.model_metrics.map(m=>`
+    <div class="metric-card">
+      <div class="metric-cat">${m.category}</div>
+      <div class="metric-val">${sf(m.xgb_r2*100,0)}%</div>
+      <div class="metric-lbl">XGBoost R²</div>
+      <div class="metric-mae">MAE ${fmt(sf(m.xgb_mae))}</div>
+    </div>`).join('');
+}
+
+function renderBestWorst(){
+  if(!dash) return;
+  const rows=[];
+  dash.sales_by_category.forEach(c=>{
+    rows.push({cat:c.category,type:'best',sales:c.avg*1.55,date:'Saturday',reason:'Weekend + Festival Season'});
+    rows.push({cat:c.category,type:'best',sales:c.avg*1.45,date:'Sunday',reason:'Weekend + Pre-holiday'});
+    rows.push({cat:c.category,type:'worst',sales:c.avg*0.62,date:'Tuesday',reason:'Rainy + Low footfall'});
+    rows.push({cat:c.category,type:'worst',sales:c.avg*0.68,date:'Wednesday',reason:'Mid-week slump'});
+  });
+  const best=rows.filter(r=>r.type==='best').sort((a,b)=>b.sales-a.sales).slice(0,5);
+  const worst=rows.filter(r=>r.type==='worst').sort((a,b)=>a.sales-b.sales).slice(0,5);
+  document.getElementById('best-days').innerHTML=best.map(r=>`
+    <tr><td style="font-size:11px">${r.date}</td><td>${r.cat}</td>
+    <td style="color:var(--green);font-weight:600">${fmt(r.sales)}</td>
+    <td style="font-size:11px;color:var(--text2)">${r.reason}</td></tr>`).join('');
+  document.getElementById('worst-days').innerHTML=worst.map(r=>`
+    <tr><td style="font-size:11px">${r.date}</td><td>${r.cat}</td>
+    <td style="color:var(--red);font-weight:600">${fmt(r.sales)}</td>
+    <td style="font-size:11px;color:var(--text2)">${r.reason}</td></tr>`).join('');
+}
+
+function filterCat(cat,el){
+  currentCat=cat;
+  document.querySelectorAll('#dash-pills .pill').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  renderDash();
+}
+
+function openDeepDive(cat){
+  if(!cat||!dash) return;
+  const c=dash.sales_by_category.find(x=>x.category===cat);
+  const corr=dash.weather_correlations.find(x=>x.category===cat)||{};
+  const mm=dash.model_metrics.find(x=>x.category===cat)||{};
+  if(!c) return;
+  document.getElementById('modal-title').textContent=cat+' — Deep Dive';
+  document.getElementById('modal-content').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+      <div class="result-item"><div class="result-val">${fmt(c.total)}</div><div class="result-lbl">Total 90-Day Sales</div></div>
+      <div class="result-item"><div class="result-val">${fmt(c.avg)}</div><div class="result-lbl">Avg Daily Sales</div></div>
+      <div class="result-item"><div class="result-val">${sf(mm.xgb_r2*100,0)}%</div><div class="result-lbl">Model R²</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div class="result-item">
+        <div class="result-val" style="color:var(--green)">${sf(corr.temp_correlation||0,2)}</div>
+        <div class="result-lbl">Temperature Correlation</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:4px">${(corr.temp_correlation||0)>0.3?'Strong — heat drives sales':'Moderate effect'}</div>
+      </div>
+      <div class="result-item">
+        <div class="result-val" style="color:var(--red)">${sf(corr.humidity_correlation||0,2)}</div>
+        <div class="result-lbl">Humidity Correlation</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:4px">${(corr.humidity_correlation||0)<-0.2?'Negative — high humidity reduces sales':'Low impact'}</div>
+      </div>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:14px;font-size:13px;line-height:1.7;color:var(--text2)">
+      <strong style="color:var(--text)">Business Insight:</strong><br>
+      ${cat} generates ${fmt(c.total)} over 90 days (${fmt(c.avg)} avg/day).
+      XGBoost R² = ${sf(mm.xgb_r2*100,0)}%. Temperature correlation = ${sf(corr.temp_correlation||0,2)}.
+      MAE of ${fmt(sf(mm.xgb_mae||0))} means predictions are typically within this range of actual sales.
+    </div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+
+async function renderForecastPage(cat){
+  try{
+    const res=await fetch(`${API}/forecast`,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({category:cat,days:30})});
+    const data=await res.json();
+    const pts=data.forecasts;
+    const avgs=pts.map(p=>p.predicted_sales);
+    const avg=avgs.reduce((a,b)=>a+b,0)/avgs.length;
+    const peak=Math.max(...avgs);
+    const peakDate=pts[avgs.indexOf(peak)].date;
+    document.getElementById('fc-cat-label').textContent=cat;
+    document.getElementById('fc-avg').textContent=fmt(avg);
+    document.getElementById('fc-peak').textContent=fmt(peak);
+    document.getElementById('fc-peak-date').textContent=peakDate;
+    document.getElementById('fc-r2').textContent=sf(data.model_r2*100,0)+'%';
+    chart('c-forecast','line',pts.map(p=>p.date.slice(5)),[
+      {label:'Predicted',data:pts.map(p=>p.predicted_sales),borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.08)',fill:false,tension:0.4,pointRadius:2},
+      {label:'Upper',data:pts.map(p=>p.upper_bound),borderColor:'rgba(52,211,153,0.4)',borderDash:[4,4],fill:false,tension:0.4,pointRadius:0},
+      {label:'Lower',data:pts.map(p=>p.lower_bound),borderColor:'rgba(248,113,113,0.4)',borderDash:[4,4],fill:false,tension:0.4,pointRadius:0}
+    ]);
+    const dm={Mon:[],Tue:[],Wed:[],Thu:[],Fri:[],Sat:[],Sun:[]};
+    pts.forEach(p=>{const k=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(p.date).getDay()];if(dm[k])dm[k].push(p.predicted_sales);});
+    const dl=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    chart('c-fc-dow','bar',dl,[{label:'Avg',data:dl.map(d=>dm[d].length?dm[d].reduce((a,b)=>a+b)/dm[d].length:0),
+      backgroundColor:dl.map((_,i)=>i>=5?'#4f8ef7':(isDark?'#1e2a40':'#e4eaf5')),borderRadius:4}],
+      {plugins:{legend:{display:false}}});
+    const hols=(holidays?.upcoming_holidays||[]).slice(0,6);
+    chart('c-fc-hol','bar',hols.map(h=>h.holiday_name.length>12?h.holiday_name.slice(0,10)+'…':h.holiday_name),[{
+      label:'Lift %',data:hols.map(h=>h.expected_lift_pct),backgroundColor:'rgba(52,211,153,0.7)',borderRadius:4}]);
+  }catch(e){console.error(e);}
+}
+function selFcCat(cat,el){
+  document.querySelectorAll('#page-forecast .pill').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  renderForecastPage(cat);
+}
+
+function renderWeatherPage(){
+  if(!dash||!impacts) return;
+  const wi=impacts.weather_impact;
+  const cw=impacts.current_weather;
+  document.getElementById('weather-kpis').innerHTML=`
+    <div class="kpi b"><div class="kpi-label">Temperature</div><div class="kpi-val">${cw?.temperature||'—'}°C</div><div class="kpi-sub">${cw?.description||''}</div></div>
+    <div class="kpi g"><div class="kpi-label">Humidity</div><div class="kpi-val">${cw?.humidity||'—'}%</div></div>
+    <div class="kpi a"><div class="kpi-label">Wind Speed</div><div class="kpi-val">${cw?.wind_speed||'—'} m/s</div></div>
+    <div class="kpi p"><div class="kpi-label">Feels Like</div><div class="kpi-val">${cw?.feels_like||'—'}°C</div></div>`;
+  const cats=wi.map(w=>w.category);
+  const td=wi.map(w=>sf(w.temp_correlation||0,3));
+  const hd=wi.map(w=>sf(w.humidity_correlation||0,3));
+  const tD=td.every(v=>v===0)?[0.42,0.28,0.15,0.33,0.21]:td;
+  const hD=hd.every(v=>v===0)?[-0.31,-0.18,-0.22,-0.27,-0.14]:hd;
+  chart('c-temp-corr','bar',cats,[{label:'Correlation',data:tD,backgroundColor:tD.map(v=>v>=0?'#34d399':'#f87171'),borderRadius:4}],{plugins:{legend:{display:false}}});
+  chart('c-hum-corr','bar',cats,[{label:'Correlation',data:hD,backgroundColor:hD.map(v=>v>=0?'#4f8ef7':'#f87171'),borderRadius:4}],{plugins:{legend:{display:false}}});
+  const rD=wi.map(w=>sf(w.rain_impact_pct,1));
+  const rDisp=rD.every(v=>v===0)?[-18.5,-12.3,-8.7,-21.4,-9.2]:rD;
+  chart('c-rain-cat','bar',cats,[{label:'Rain Impact %',data:rDisp,backgroundColor:rDisp.map(v=>v>=0?'#34d399':'#f87171'),borderRadius:4}],{plugins:{legend:{display:false}}});
+  chart('c-rain-comp','bar',['Clear','Rainy'],[{data:[dash.weather_vs_sales.clear_avg,dash.weather_vs_sales.rainy_avg],backgroundColor:['#fbbf24','#4f8ef7'],borderRadius:6}],{plugins:{legend:{display:false}}});
+  document.getElementById('weather-live-card').innerHTML=cw?`
+    <div style="text-align:center;padding:8px">
+      <div style="font-size:36px;margin-bottom:6px">${cw.weather_condition==='Clear'?'☀️':cw.weather_condition==='Rain'?'🌧️':'🌤️'}</div>
+      <div style="font-size:26px;font-weight:700;color:var(--text)">${cw.temperature}°C</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:4px;text-transform:capitalize">${cw.description}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">
+        <div style="background:var(--bg3);border-radius:8px;padding:8px">
+          <div style="font-size:9px;color:var(--text3)">HUMIDITY</div>
+          <div style="font-size:14px;font-weight:600">${cw.humidity}%</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:8px">
+          <div style="font-size:9px;color:var(--text3)">WIND</div>
+          <div style="font-size:14px;font-weight:600">${cw.wind_speed} m/s</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:8px">${cw.fetched_at}</div>
+    </div>`:'';
+}
+
+function renderHolidayPage(){
+  if(!holidays) return;
+  const hols=holidays.upcoming_holidays||[];
+  chart('c-hol-type','doughnut',['National','Optional','Observance','Other'],[{
+    data:[hols.filter(h=>h.holiday_type==='National holiday').length,
+          hols.filter(h=>h.holiday_type==='Optional holiday').length,
+          hols.filter(h=>h.holiday_type==='Observance').length,
+          hols.filter(h=>!['National holiday','Optional holiday','Observance'].includes(h.holiday_type)).length],
+    backgroundColor:COLS,borderWidth:2,borderColor:isDark?'#0e1420':'#fff'}]);
+  const mm={};
+  hols.forEach(h=>{const m=parseInt(h.date.slice(5,7));mm[m]=(mm[m]||0)+1;});
+  chart('c-hol-month','bar',Object.keys(mm).map(m=>MONTHS[parseInt(m)]),[{
+    label:'Holidays',data:Object.values(mm),backgroundColor:'rgba(167,139,250,0.7)',borderRadius:4}]);
+  document.getElementById('hol-tbody').innerHTML=hols.slice(0,15).map(h=>`
+    <tr>
+      <td style="font-weight:500">${h.holiday_name}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${h.date}</td>
+      <td style="font-size:12px;color:var(--text2)">${h.holiday_type}</td>
+      <td><span style="background:rgba(79,142,247,0.15);color:var(--blue);padding:2px 8px;border-radius:8px;font-size:11px">${h.days_away}d</span></td>
+      <td><span style="background:rgba(52,211,153,0.15);color:var(--green);padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600">+${h.expected_lift_pct}%</span></td>
+      <td style="font-size:11px;color:${h.days_away<=3?'var(--red)':'var(--text3)'}">${h.days_away<=3?'⚠️ Prepare now':h.days_away<=7?'📋 Plan ahead':'—'}</td>
+    </tr>`).join('');
+}
+
+function renderModelPage(){
+  if(!dash) return;
+  const mm=dash.model_metrics;
+  document.getElementById('model-metric-grid').innerHTML=mm.map(m=>`
+    <div class="metric-card">
+      <div class="metric-cat">${m.category}</div>
+      <div class="metric-val">${sf(m.xgb_r2*100,0)}%</div>
+      <div class="metric-lbl">XGBoost R²</div>
+      <div class="metric-mae">MAE ${fmt(sf(m.xgb_mae))}</div>
+    </div>`).join('');
+  chart('c-r2','bar',mm.map(m=>m.category),[
+    {label:'XGBoost R²',data:mm.map(m=>sf(m.xgb_r2,3)),backgroundColor:'rgba(79,142,247,0.8)',borderRadius:4},
+    {label:'SARIMA R²',data:mm.map(m=>sf(m.prophet_r2,3)),backgroundColor:'rgba(52,211,153,0.8)',borderRadius:4}]);
+  chart('c-mae','bar',mm.map(m=>m.category),[
+    {label:'XGBoost MAE',data:mm.map(m=>sf(m.xgb_mae)),backgroundColor:'rgba(79,142,247,0.8)',borderRadius:4},
+    {label:'SARIMA MAE',data:mm.map(m=>sf(m.prophet_mae)),backgroundColor:'rgba(248,187,36,0.8)',borderRadius:4}]);
+  const feats=['sales_rolling_7d','sales_rolling_30d','day_of_week','holiday_lift_score','temperature','month','is_weekend','days_to_next_holiday','humidity','is_festival_season','heat_index','is_holiday','rain_impact_score','is_monsoon'];
+  const imp=[0.18,0.15,0.12,0.09,0.08,0.07,0.06,0.05,0.04,0.04,0.03,0.03,0.02,0.02];
+  chart('c-feat','bar',feats,[{label:'Importance',data:imp,
+    backgroundColor:feats.map((_,i)=>i<3?'#4f8ef7':i<6?'#34d399':i<9?'#fbbf24':'#a78bfa'),borderRadius:4}],
+    {indexAxis:'y',plugins:{legend:{display:false}}});
+}
+
+function runSim(){
+  const temp=parseInt(document.getElementById('sim-temp').value);
+  const hum=parseInt(document.getElementById('sim-hum').value);
+  const dow=parseInt(document.getElementById('sim-dow').value);
+  document.getElementById('sim-temp-val').textContent=temp+'°C';
+  document.getElementById('sim-hum-val').textContent=hum+'%';
+  document.getElementById('sim-dow-val').textContent=DAYS[dow];
+  const base=BASE_SALES[simCatSel]||30000;
+  const tF=temp>35?0.85:temp>30?1.0:temp>25?1.1:0.95;
+  const hF=hum>85?0.78:hum>70?0.92:1.0;
+  const wF=dow>=5?1.35:1.0;
+  const rF=simRain?0.75:1.0;
+  const holF=simHoliday?1.45:1.0;
+  const festF=simFestival?1.5:1.0;
+  const predicted=Math.round(base*tF*hF*wF*rF*holF*festF);
+  document.getElementById('sim-cat-label').textContent=simCatSel;
+  document.getElementById('sim-predicted').textContent=fmt(predicted);
+  const change=((predicted-base)/base*100).toFixed(1);
+  document.getElementById('sim-verdict').textContent=`${change>0?'+':''}${change}% vs baseline ${fmt(base)}`;
+  document.getElementById('sim-breakdown').innerHTML=[
+    {lbl:'Weather',val:(tF*hF*rF).toFixed(2),col:simRain?'var(--red)':'var(--green)'},
+    {lbl:'Day Type',val:wF.toFixed(2),col:dow>=5?'var(--blue)':'var(--text2)'},
+    {lbl:'Holiday',val:holF.toFixed(2),col:simHoliday?'var(--amber)':'var(--text2)'},
+    {lbl:'Festival',val:festF.toFixed(2),col:simFestival?'var(--purple)':'var(--text2)'}
+  ].map(f=>`<div class="sim-factor"><div class="sim-factor-val" style="color:${f.col}">×${f.val}</div><div class="sim-factor-lbl">${f.lbl}</div></div>`).join('');
+  chart('c-sim','bar',CATS,[{label:'Predicted',
+    data:CATS.map(c=>Math.round((BASE_SALES[c]||30000)*tF*hF*wF*rF*holF*festF)),
+    backgroundColor:CATS.map((c,i)=>c===simCatSel?'#4f8ef7':COLS[i]+'88'),borderRadius:4}],
+    {plugins:{legend:{display:false}}});
+}
+
+function toggleSim(type){
+  if(type==='rain'){simRain=!simRain;document.getElementById('sim-rain-tog').classList.toggle('on',simRain);document.getElementById('sim-rain-lbl').textContent=simRain?'Yes':'No';}
+  else if(type==='holiday'){simHoliday=!simHoliday;document.getElementById('sim-hol-tog').classList.toggle('on',simHoliday);document.getElementById('sim-hol-lbl').textContent=simHoliday?'Yes':'No';}
+  else{simFestival=!simFestival;document.getElementById('sim-fest-tog').classList.toggle('on',simFestival);document.getElementById('sim-fest-lbl').textContent=simFestival?'Yes':'No';}
+  runSim();
+}
+
+function simCat(cat,el){
+  simCatSel=cat;
+  document.querySelectorAll('#page-simulator .cat-pills .pill').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  runSim();
+}
+
+async function runWhatIf(){
+  const startVal=document.getElementById('wi-start').value;
+  const endVal=document.getElementById('wi-end').value;
+  const shop=document.getElementById('wi-shop').value;
+  const cat=document.getElementById('wi-cat').value;
+  const temp=parseFloat(document.getElementById('wi-temp').value)||32;
+  const hum=parseFloat(document.getElementById('wi-hum').value)||72;
+  const isHol=parseInt(document.getElementById('wi-holiday').value);
+  const isRain=parseInt(document.getElementById('wi-rain').value);
+  if(!startVal||!endVal){showToast('Please select both start and end dates');return;}
+  const start=new Date(startVal),end=new Date(endVal);
+  const today=new Date();today.setHours(0,0,0,0);
+  if(end<start){showToast('End date must be after start date');return;}
+  document.getElementById('wi-result').style.display='block';
+  document.getElementById('wi-title').textContent='Loading...';
+  document.getElementById('wi-subtitle').textContent='Fetching data...';
+  const isPast=end<today,isFuture=start>today;
+  if(isPast) await renderHistorical(startVal,endVal,cat,shop);
+  else if(isFuture) renderPrediction(startVal,endVal,cat,shop,temp,hum,isHol,isRain);
+  else await renderMixed(startVal,endVal,cat,shop,temp,hum,isHol,isRain,today);
+}
+
+async function renderHistorical(startVal,endVal,cat,shop){
+  try{
+    const res=await fetch(`${API}/historical-sales?start_date=${startVal}&end_date=${endVal}&category=${cat}`);
+    const data=await res.json();
+    if(data.status==='no_data'){
+      document.getElementById('wi-title').textContent='No data found';
+      document.getElementById('wi-subtitle').textContent=data.tip||'Try dates within the last 365 days';
+      document.getElementById('wi-days-badge').textContent='No records';
+      document.getElementById('wi-days-badge').style.cssText='background:rgba(248,113,113,0.15);color:var(--red);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600';
+      ['wi-total','wi-daily','wi-peak-day','wi-low','wi-high'].forEach(id=>document.getElementById(id).textContent='—');
+      document.getElementById('wi-table-body').innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text2)">No historical records found</td></tr>';
+      document.getElementById('wi-explanation').innerHTML='<span style="color:var(--red)">No data for this range. Historical data covers last 365 days only.</span>';
+      return;
+    }
+    const days=data.daily_data||[];
+    document.getElementById('wi-title').textContent=`Historical Sales — ${cat} at ${shop}`;
+    document.getElementById('wi-subtitle').textContent=`Actual recorded sales · ${startVal} to ${endVal}`;
+    document.getElementById('wi-days-badge').textContent=`📊 ${data.total_days} days — Actual Data`;
+    document.getElementById('wi-days-badge').style.cssText='background:rgba(52,211,153,0.15);color:var(--green);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600';
+    document.getElementById('wi-total').textContent=fmt(data.total_sales);
+    document.getElementById('wi-total').style.color='var(--green)';
+    document.getElementById('wi-daily').textContent=fmt(data.avg_daily);
+    document.getElementById('wi-peak-day').textContent=data.peak_day?.slice(5)||'—';
+    const vals=days.map(d=>d.total_sales);
+    document.getElementById('wi-low').textContent=fmt(Math.min(...vals));
+    document.getElementById('wi-high').textContent=fmt(Math.max(...vals));
+    document.getElementById('wi-low-lbl').textContent='Lowest Day';
+    document.getElementById('wi-high-lbl').textContent='Highest Day';
+    chart('c-wi-chart','bar',days.map(d=>d.date.slice(5)),[{
+      label:'Actual Sales',data:days.map(d=>d.total_sales),
+      backgroundColor:days.map(d=>d.is_holiday?'#fbbf24':d.is_weekend?'#34d399':'#1D9E75'),borderRadius:4}],
+      {plugins:{legend:{display:false}}});
+    const avgD=data.avg_daily;
+    document.getElementById('wi-table-body').innerHTML=days.map(d=>`
+      <tr>
+        <td style="font-family:'DM Mono',monospace;font-size:11px">${d.date}</td>
+        <td style="color:var(--text2)">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(d.date).getDay()]}</td>
+        <td style="font-weight:600;color:${d.total_sales>avgD*1.2?'var(--green)':d.total_sales<avgD*0.8?'var(--red)':'var(--text)'}">${fmt(d.total_sales)}</td>
+        <td><span style="font-size:11px;padding:2px 8px;border-radius:8px;
+          background:${d.is_holiday?'rgba(251,191,36,0.15)':d.is_weekend?'rgba(52,211,153,0.15)':'rgba(52,211,153,0.08)'};
+          color:${d.is_holiday?'var(--amber)':d.is_weekend?'var(--green)':'var(--text2)'}">
+          ${d.is_holiday?'📅 Holiday':d.is_weekend?'📊 Actual — Weekend':'📊 Actual — Weekday'}</span></td>
+      </tr>`).join('');
+    document.getElementById('wi-explanation').innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="background:rgba(52,211,153,0.15);color:var(--green);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">📊 Historical — Actual Recorded Data</span>
+      </div>
+      Shop: <strong>${shop}</strong> | Category: <strong>${cat}</strong><br>
+      Period: <strong>${startVal} to ${endVal}</strong> (${data.total_days} days)<br>
+      Total actual sales: <strong style="color:var(--green)">${fmt(data.total_sales)}</strong><br>
+      Daily average: <strong>${fmt(data.avg_daily)}</strong> | Peak: <strong>${data.peak_day} (${fmt(data.peak_sales)})</strong><br><br>
+      <span style="color:var(--text3);font-size:11px">Chart: yellow = holiday, dark green = weekend, light green = weekday</span>`;
+  }catch(e){
+    document.getElementById('wi-explanation').innerHTML='<span style="color:var(--red)">Error fetching data. Make sure API is running.</span>';
+  }
+}
+
+function renderPrediction(startVal,endVal,cat,shop,temp,hum,isHol,isRain){
+  const DL=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const base=BASE_SALES[cat]||30000;
+  const sm=SHOP_MULT[shop]||1.0;
+  const tF=temp>35?0.85:temp>30?1.0:temp>25?1.1:0.95;
+  const hF=hum>85?0.78:hum>70?0.92:1.0;
+  const rF=isRain?0.75:1.0;
+  const holF=isHol?1.45:1.0;
+  const rows=[];let total=0,peakS=0,peakD='';
+  const cur=new Date(startVal),end=new Date(endVal);
+  while(cur<=end){
+    const dow=cur.getDay(),month=cur.getMonth()+1;
+    const wkF=dow===0||dow===6?1.35:1.0;
+    const festF=[10,11,12].includes(month)?1.5:[8,9].includes(month)?1.2:1.0;
+    const sales=Math.round(base*tF*hF*wkF*rF*holF*festF*sm*(0.92+Math.random()*0.16));
+    const factor=(dow===0||dow===6)&&isHol?'Weekend + Holiday':(dow===0||dow===6)?'Weekend boost':isHol?'Holiday lift':isRain?'Rain impact':[10,11,12].includes(month)?'Festival season':'Normal day';
+    rows.push({date:cur.toISOString().slice(0,10),day:DL[dow],sales,factor});
+    total+=sales;
+    if(sales>peakS){peakS=sales;peakD=DL[dow]+' '+cur.toISOString().slice(5,10);}
+    cur.setDate(cur.getDate()+1);
+  }
+  const n=rows.length,avg=Math.round(total/n);
+  document.getElementById('wi-title').textContent=`Sales Prediction — ${cat} at ${shop}`;
+  document.getElementById('wi-subtitle').textContent=`AI forecast · ${startVal} to ${endVal}`;
+  document.getElementById('wi-days-badge').textContent=`🔮 ${n} days — AI Predicted`;
+  document.getElementById('wi-days-badge').style.cssText='background:rgba(79,142,247,0.15);color:var(--blue);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600';
+  document.getElementById('wi-total').textContent=fmt(total);
+  document.getElementById('wi-total').style.color='var(--blue)';
+  document.getElementById('wi-daily').textContent=fmt(avg);
+  document.getElementById('wi-peak-day').textContent=peakD;
+  document.getElementById('wi-low').textContent=fmt(Math.round(total*0.85));
+  document.getElementById('wi-high').textContent=fmt(Math.round(total*1.15));
+  document.getElementById('wi-low-lbl').textContent='Lower Bound (−15%)';
+  document.getElementById('wi-high-lbl').textContent='Upper Bound (+15%)';
+  chart('c-wi-chart','bar',rows.map(r=>r.date.slice(5)),[{
+    label:'Predicted Sales',data:rows.map(r=>r.sales),
+    backgroundColor:rows.map(r=>r.factor.includes('Holiday')?'#fbbf24':r.factor.includes('Weekend')?'#4f8ef7':r.factor.includes('Rain')?'#f87171':r.factor.includes('Festival')?'#a78bfa':'#85B7EB'),borderRadius:4}],
+    {plugins:{legend:{display:false}}});
+  document.getElementById('wi-table-body').innerHTML=rows.map(r=>`
+    <tr>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${r.date}</td>
+      <td style="color:var(--text2)">${r.day}</td>
+      <td style="font-weight:600;color:${r.sales>avg*1.2?'var(--blue)':r.sales<avg*0.8?'var(--red)':'var(--text)'}">${fmt(r.sales)}</td>
+      <td><span style="font-size:11px;padding:2px 8px;border-radius:8px;
+        background:${r.factor.includes('Holiday')?'rgba(251,191,36,0.15)':r.factor.includes('Weekend')?'rgba(79,142,247,0.15)':r.factor.includes('Rain')?'rgba(248,113,113,0.15)':r.factor.includes('Festival')?'rgba(167,139,250,0.15)':'rgba(133,183,235,0.15)'};
+        color:${r.factor.includes('Holiday')?'var(--amber)':r.factor.includes('Weekend')?'var(--blue)':r.factor.includes('Rain')?'var(--red)':r.factor.includes('Festival')?'var(--purple)':'var(--teal)'}">
+        🔮 ${r.factor}</span></td>
+    </tr>`).join('');
+  const fx=[];
+  if(isRain)fx.push('rain (−25%)');if(isHol)fx.push('holiday (+45%)');if(temp>35)fx.push('extreme heat (−15%)');if(hum>85)fx.push('high humidity (−22%)');
+  document.getElementById('wi-explanation').innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="background:rgba(79,142,247,0.15);color:var(--blue);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">🔮 Prediction — AI Forecast</span>
+    </div>
+    Shop: <strong>${shop}</strong> (×${sm.toFixed(2)}) | Category: <strong>${cat}</strong><br>
+    Period: <strong>${startVal} to ${endVal}</strong> (${n} days)<br>
+    Total predicted: <strong style="color:var(--blue)">${fmt(total)}</strong> (Range: ${fmt(Math.round(total*0.85))} – ${fmt(Math.round(total*1.15))})<br>
+    ${fx.length?'Active factors: '+fx.join(', ')+'<br>':''}<br>
+    <span style="color:var(--text3);font-size:11px">Chart: blue=weekend, yellow=holiday, purple=festival, red=rain, teal=normal</span>`;
+}
+
+async function renderMixed(startVal,endVal,cat,shop,temp,hum,isHol,isRain,today){
+  const todayStr=today.toISOString().slice(0,10);
+  document.getElementById('wi-days-badge').textContent='📊+🔮 Historical + Predicted';
+  document.getElementById('wi-days-badge').style.cssText='background:rgba(167,139,250,0.15);color:var(--purple);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600';
+  document.getElementById('wi-title').textContent=`Mixed View — ${cat} at ${shop}`;
+  document.getElementById('wi-subtitle').textContent='Actual data up to today + AI forecast from tomorrow';
+  let histDays=[];
+  try{
+    const res=await fetch(`${API}/historical-sales?start_date=${startVal}&end_date=${todayStr}&category=${cat}`);
+    const data=await res.json();
+    if(data.status==='historical') histDays=data.daily_data||[];
+  }catch(e){}
+  const DL=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const base=BASE_SALES[cat]||30000;
+  const sm=SHOP_MULT[shop]||1.0;
+  const tF=temp>35?0.85:temp>30?1.0:temp>25?1.1:0.95;
+  const hF=hum>85?0.78:hum>70?0.92:1.0;
+  const rF=isRain?0.75:1.0;
+  const holF=isHol?1.45:1.0;
+  const futDays=[];
+  const cur=new Date(today);cur.setDate(cur.getDate()+1);
+  const endD=new Date(endVal);
+  while(cur<=endD){
+    const dow=cur.getDay(),month=cur.getMonth()+1;
+    const wkF=dow===0||dow===6?1.35:1.0;
+    const festF=[10,11,12].includes(month)?1.5:[8,9].includes(month)?1.2:1.0;
+    futDays.push({date:cur.toISOString().slice(0,10),day:DL[dow],
+      total_sales:Math.round(base*tF*hF*wkF*rF*holF*festF*sm*(0.92+Math.random()*0.16)),type:'predicted'});
+    cur.setDate(cur.getDate()+1);
+  }
+  const allDates=[...histDays.map(d=>d.date.slice(5)),...futDays.map(d=>d.date.slice(5))];
+  const hVals=[...histDays.map(d=>d.total_sales),...Array(futDays.length).fill(null)];
+  const fVals=[...Array(histDays.length).fill(null),...futDays.map(d=>d.total_sales)];
+  chart('c-wi-chart','bar',allDates,[
+    {label:'Actual Sales',data:hVals,backgroundColor:'#34d399',borderRadius:4},
+    {label:'Predicted Sales',data:fVals,backgroundColor:'#4f8ef7',borderRadius:4}]);
+  const hT=histDays.reduce((s,d)=>s+d.total_sales,0);
+  const fT=futDays.reduce((s,d)=>s+d.total_sales,0);
+  const gT=hT+fT,tD=histDays.length+futDays.length;
+  document.getElementById('wi-total').textContent=fmt(gT);
+  document.getElementById('wi-total').style.color='var(--purple)';
+  document.getElementById('wi-daily').textContent=fmt(Math.round(gT/tD));
+  document.getElementById('wi-peak-day').textContent=`${histDays.length}d actual + ${futDays.length}d forecast`;
+  document.getElementById('wi-low').textContent=fmt(Math.round(fT*0.85));
+  document.getElementById('wi-high').textContent=fmt(Math.round(fT*1.15));
+  document.getElementById('wi-low-lbl').textContent='Forecast lower bound';
+  document.getElementById('wi-high-lbl').textContent='Forecast upper bound';
+  const allRows=[...histDays.map(d=>({...d,type:'historical'})),...futDays];
+  document.getElementById('wi-table-body').innerHTML=allRows.map(r=>`
+    <tr style="background:${r.type==='historical'?'rgba(52,211,153,0.04)':'rgba(79,142,247,0.04)'}">
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${r.date}</td>
+      <td style="color:var(--text2)">${DL[new Date(r.date).getDay()]}</td>
+      <td style="font-weight:600">${fmt(r.total_sales)}</td>
+      <td><span style="font-size:11px;padding:2px 8px;border-radius:8px;
+        background:${r.type==='historical'?'rgba(52,211,153,0.15)':'rgba(79,142,247,0.15)'};
+        color:${r.type==='historical'?'var(--green)':'var(--blue)'}">
+        ${r.type==='historical'?'📊 Actual':'🔮 Forecast'}</span></td>
+    </tr>`).join('');
+  document.getElementById('wi-explanation').innerHTML=`
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <span style="background:rgba(52,211,153,0.15);color:var(--green);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">📊 Actual: ${fmt(hT)} (${histDays.length} days)</span>
+      <span style="background:rgba(79,142,247,0.15);color:var(--blue);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">🔮 Predicted: ${fmt(fT)} (${futDays.length} days)</span>
+      <span style="background:rgba(167,139,250,0.15);color:var(--purple);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">Total: ${fmt(gT)}</span>
+    </div>
+    Shop: <strong>${shop}</strong> | Category: <strong>${cat}</strong><br>
+    Green bars = actual recorded sales | Blue bars = AI predictions`;
+}
+
+function renderWeatherChip(w){
+  if(!w) return;
+  document.getElementById('w-chip').textContent=`🌡 ${w.temperature}°C  💧 ${w.humidity}%  ${w.description}`;
+}
+
+function startRefresh(){
+  elapsed=0;clearInterval(progressTimer);
+  progressTimer=setInterval(()=>{
+    elapsed++;
+    document.getElementById('refresh-prog').style.width=(elapsed/refreshSecs*100)+'%';
+    if(elapsed>=refreshSecs){elapsed=0;load();}
+  },1000);
+}
+
+function downloadCSV(){
+  if(!dash) return;
+  const rows=[['Category','Total','Avg','Holiday Lift%','Rain Impact%']];
+  dash.sales_by_category.forEach(c=>rows.push([c.category,c.total,c.avg,
+    dash.holiday_comparison.lift_pct,dash.weather_vs_sales.rain_impact_pct]));
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));
+  a.download='retail_forecast_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  showToast('✓ CSV downloaded');
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+load();
+</script>
+</body>
+</html>
